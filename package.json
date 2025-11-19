@@ -83,7 +83,6 @@
         "build": "tsc && rollup -c && gulp && npm run test",
         "watch": "rollup -wc"
     },
-    "homepage": "https://passer-by.com/relationship/",
     "directories": {
         "test": "test"
     },
