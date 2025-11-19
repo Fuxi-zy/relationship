@@ -1,0 +1,91 @@
+{
+    "name": "@fuxishi/relationship",
+    "version": "1.2.7",
+    "description": "Chinese kinship library",
+    "author": "HaoLe Zheng",
+    "license": "MIT",
+    "keywords": [
+        "relationship",
+        "relationship.js",
+        "chinese",
+        "family",
+        "kinship",
+        "家庭亲戚称谓",
+        "亲戚关系算法"
+    ],
+    "main": "./dist/relationship.min.js",
+    "module": "./dist/relationship.min.mjs",
+    "types": "./dist/relationship.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/relationship.min.mjs",
+            "require": "./dist/relationship.min.js",
+            "types": "./dist/relationship.d.ts",
+            "default": "./dist/relationship.min.js"
+        },
+        "./mode": {
+            "import": "./dist/relationship-mode.min.mjs",
+            "require": "./dist/relationship-mode.min.js",
+            "types": "./dist/relationship-mode.d.ts",
+            "default": "./dist/relationship-mode.min.js"
+        },
+        "./zh-HK": {
+            "import": "./dist/lang/relationship.zh-HK.min.mjs",
+            "require": "./dist/lang/relationship.zh-HK.min.js",
+            "types": "./dist/lang/relationship.zh-HK.d.ts",
+            "default": "./dist/lang/relationship.zh-HK.min.js"
+        },
+        "./zh-HK/mode": {
+            "import": "./dist/lang/relationship-mode.zh-HK.min.mjs",
+            "require": "./dist/lang/relationship-mode.zh-HK.min.js",
+            "types": "./dist/lang/relationship-mode.zh-HK.d.ts",
+            "default": "./dist/lang/relationship-mode.zh-HK.min.js"
+        }
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mumuy/relationship.git"
+    },
+    "bugs": {
+        "url": "https://github.com/mumuy/relationship/issues"
+    },
+    "engines": {
+        "node": ">=20",
+        "yarn": "please-use-npm",
+        "npm": ">=8"
+    },
+    "files": [
+        "dist"
+    ],
+    "devDependencies": {
+        "@babel/core": "^7.26.0",
+        "@babel/plugin-transform-runtime": "^7.25.9",
+        "@babel/preset-env": "^7.26.0",
+        "@babel/runtime": "^7.26.0",
+        "@rollup/plugin-babel": "^6.0.4",
+        "@rollup/plugin-node-resolve": "^15.3.0",
+        "@rollup/plugin-terser": "^0.4.4",
+        "@rollup/plugin-typescript": "^12.3.0",
+        "@types/node": "^24.10.1",
+        "gulp": "^5.0.0",
+        "gulp-cht": "^2.0.20",
+        "gulp-rename": "^2.0.0",
+        "gulp-replace": "^1.1.4",
+        "rollup": "^3.29.5",
+        "tape": "^5.9.0",
+        "through2": "^4.0.2",
+        "typescript": "^5.9.3"
+    },
+    "scripts": {
+        "test": "node test/index.js",
+        "build": "tsc && rollup -c && gulp && npm run test",
+        "watch": "rollup -wc"
+    },
+    "homepage": "https://passer-by.com/relationship/",
+    "directories": {
+        "test": "test"
+    },
+    "dependencies": {
+        "tslib": "^2.8.1"
+    }
+}

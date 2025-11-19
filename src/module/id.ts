@@ -1,0 +1,235 @@
+/*
+ * 标识符 - 唯一性关系链，将【关系链】转换成【中文表述】
+ */
+import { pair as _pair } from "./data/pair";
+import { sort as _sort } from "./data/sort";
+
+import { number2zh } from "./unit";
+import { selector2id } from "./selector";
+import { modeData } from "./mode";
+
+// 逆转ID
+export function reverseId(id: string, sex: number) {
+  if (!id) {
+    return [""];
+  }
+  // 映射关系
+  const hash: Record<string, string[]> = {
+    f: ["d", "s"],
+    m: ["d", "s"],
+    h: ["w", ""],
+    w: ["", "h"],
+    s: ["m", "f"],
+    d: ["m", "f"],
+    lb: ["os", "ob"],
+    ob: ["ls", "lb"],
+    xb: ["xs", "xb"],
+    ls: ["os", "ob"],
+    os: ["ls", "lb"],
+    xs: ["xs", "xb"],
+  };
+  // 年纪判断
+  let age = "";
+  if (id.match(/&o$/)) {
+    age = "&l";
+  } else if (id.match(/&l$/)) {
+    age = "&o";
+  }
+  id = id.replace(/&[ol\d+]/g, "");
+  // 性别判断
+  if (sex < 0) {
+    if (id.match(/^w/)) {
+      sex = 1;
+    } else if (id.match(/^h/)) {
+      sex = 0;
+    }
+  }
+  const doing = function (sex: number) {
+    const sid = ("," + sex + "," + id)
+      .replace(/,[fhs]|,[olx]b/g, ",1")
+      .replace(/,[mwd]|,[olx]s/g, ",0");
+    const sid_arr = sid
+      .slice(0, sid.length - 2)
+      .split(",")
+      .reverse();
+    const r_id = id
+      .split(",")
+      .reverse()
+      .map((id, i) => hash[id][Number(sid_arr[i])])
+      .join(",");
+    const gen = getGenById(r_id);
+    return r_id + (gen ? "" : age);
+  };
+  if (sex < 0) {
+    return [doing(1), doing(0)];
+  } else {
+    return [doing(sex)];
+  }
+}
+
+// ID列表去重
+export function filterId(arr: string[]): string[] {
+  const sameList = arr.filter(
+    (item) => item === item.replace(/[ol](?=[s|b])/g, "x").replace(/&[ol]/, "")
+  );
+  return arr
+    .filter((item) => {
+      const temp = item.replace(/[ol](?=[s|b])/g, "x").replace(/&[ol]/, "");
+      return (
+        sameList.includes(item) || (item != temp && !sameList.includes(temp))
+      );
+    })
+    .filter((item, idx, arr) => arr.indexOf(item) === idx);
+}
+
+// 通过ID获取世代数
+export function getGenById(id: string): number {
+  const gMap: Record<string, number> = { f: 1, m: 1, s: -1, d: -1 };
+  let gen = 0;
+  id.split(",").forEach((sub) => {
+    const s = sub.replace(/&[ol\d]+/, "");
+    gen += gMap[s] || 0;
+  });
+  return gen;
+}
+
+// 通过ID获取关系称呼
+export function getItemsById(id: string) {
+  let items: string[] = [];
+  const getData = function (key: string): string[] {
+    let ids: string[] = [];
+    const k1 = key.replace(/(,[sd])(,[wh])?$/, "$1&o$2");
+    const k2 = key.replace(/(,[sd])(,[wh])?$/, "$1&l$2");
+    if (modeData[k1] && modeData[k2]) {
+      ids = [k1, k2];
+    } else if (modeData[key]) {
+      ids = [key];
+    }
+    return filterId(ids).map((id) => modeData[id][0]);
+  };
+  // 对排序进行处理
+  const match = id.match(/&([\d]+)(,[hw])?$/);
+  if (match) {
+    const num = match[1];
+    const zh = number2zh(num as unknown as number);
+    id = id.replace(/&\d+/g, "");
+    if (_sort[id]) {
+      items.push(_sort[id][0].replace("几", zh));
+    } else if (modeData[id]) {
+      const gen = getGenById(id);
+      let item = "";
+      if (gen < 3 && !id.match(/[hw],/)) {
+        modeData[id].forEach(function (name) {
+          if (!item && name.includes("几")) {
+            item = name.replace("几", zh);
+          }
+        });
+        if (!item) {
+          item = modeData[id][0];
+          item = item.match(/^[大小]/)
+            ? item.replace(/^[大小]/, zh)
+            : zh + item;
+        }
+      }
+      items.push(item);
+    }
+  }
+  // 直接匹配称呼
+  if (!items.length) {
+    id = id.replace(/&\d+/g, "");
+    items = getData(id);
+  }
+  // 忽略年龄条件查找
+  if (!items.length) {
+    id = id.replace(/&[ol]/g, "");
+    items = getData(id);
+  }
+  // 忽略年龄条件查找
+  if (!items.length) {
+    id = id.replace(/[ol](b|s)/g, "x$1");
+    items = getData(id);
+  }
+  // 缩小访问查找
+  if (!items.length) {
+    let l = id.replace(/x/g, "l");
+    let o = id.replace(/x/g, "o");
+    items = items.concat(getData(o), getData(l));
+  }
+  return items;
+}
+
+// 通过ID获取关系链
+let data: Record<string, string[]> = {
+  ...modeData,
+  xb: ["兄弟"],
+  xs: ["姐妹"],
+};
+export function getChainById(id: string, sex = -1) {
+  let item = id
+    .split(",")
+    .map((sign) => {
+      const key = sign.replace(/&[ol\d]+/, "");
+      return data[key][0];
+    })
+    .join("的");
+  if (sex > -1 && data[sex + "," + id]) {
+    if (sex == 0) {
+      item = "(女性)" + item;
+    } else if (sex == 1) {
+      item = "(男性)" + item;
+    }
+  }
+  return item;
+}
+
+// 通过ID获取关系合称
+export function getPairsById(id1: string, id2: string) {
+  id1 = id1.replace(/&\d+/g, "");
+  id2 = id2.replace(/&\d+/g, "");
+  const id1_x = id1.replace(/([ol])([bs])/g, "x$2");
+  const id2_x = id2.replace(/([ol])([bs])/g, "x$2");
+  const id1_r = id1.replace(/&[ol]/g, "");
+  const id2_r = id2.replace(/&[ol]/g, "");
+
+  let result: string[] = [];
+  let result_x: string[] = [];
+  let result_r: string[] = [];
+  for (const key in _pair) {
+    const selectors = key.split("#");
+    if (selectors.length > 1) {
+      const list1 = selector2id(selectors[0]);
+      const list2 = selector2id(selectors[1]);
+      const list1_r = list1.map((selector) =>
+        selector.replace(/&[ol\d]+/, "").replace(/([ol])([bs])/, "x$2")
+      );
+      const list2_r = list2.map((selector) =>
+        selector.replace(/&[ol\d]+/, "").replace(/([ol])([bs])/, "x$2")
+      );
+      if (
+        (list1.includes(id1) && list2.includes(id2)) ||
+        (list1.includes(id2) && list2.includes(id1))
+      ) {
+        result.push(_pair[key][0]);
+      }
+      if (
+        (list1_r.includes(id1_x) && list2_r.includes(id2_x)) ||
+        (list1_r.includes(id2_x) && list2_r.includes(id1_x))
+      ) {
+        result_x.push(_pair[key][0]);
+      }
+      if (
+        (list1_r.includes(id1_r) && list2_r.includes(id2_r)) ||
+        (list1_r.includes(id2_r) && list2_r.includes(id1_r))
+      ) {
+        result_r.push(_pair[key][0]);
+      }
+    }
+  }
+  if (!result.length) {
+    result = result_x;
+  }
+  if (!result.length) {
+    result = result_r;
+  }
+  return result;
+}
